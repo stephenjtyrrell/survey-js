@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      sqlite:
+        image: nouchka/sqlite3
+        ports:
+          - 3306:3306
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install root dependencies
+        run: npm install
+      - name: Install backend dependencies
+        run: |
+          cd server
+          npm install
+      - name: Run frontend tests
+        run: npm run test:frontend -- --watch=false --browsers=ChromeHeadless
+      - name: Run backend tests
+        run: npm run test:backend
+      - name: Build Docker image
+        run: docker build -t surveyjs-fullstack .

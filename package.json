@@ -8,7 +8,10 @@
     "start:backend": "node server/index.js",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:frontend": "ng test --watch=false",
+    "test:backend": "cd server && npm install && npm test",
+    "test:all": "npm-run-all --parallel test:frontend test:backend"
   },
   "private": true,
   "dependencies": {
@@ -36,6 +39,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "npm-run-all": "^4.1.5",
     "typescript": "~5.8.2"
   }
 }

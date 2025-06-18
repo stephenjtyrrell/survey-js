@@ -118,8 +118,12 @@ app.use((err, req, res, next) => {
 
 // (Optional) Migration utility: run migrate-to-sqlite.js if you need to import old JSON data
 
-app.listen(PORT, () => {
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`Survey backend (SQLite) running on port ${PORT}`);
-  }
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Survey backend (SQLite) running on port ${PORT}`);
+    }
+  });
+}
+
+module.exports = app;
