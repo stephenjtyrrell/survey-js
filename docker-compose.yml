@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  surveyjs:
+    image: stetyrrell132/surveyjs:latest
+    ports:
+      - "3001:3001"
+    restart: unless-stopped

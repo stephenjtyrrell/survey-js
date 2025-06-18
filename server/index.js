@@ -11,6 +11,14 @@ const DB_PATH = path.join(__dirname, 'survey.db');
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Fallback: serve index.html for any non-API route (for Angular routing)
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
 // Initialize SQLite DB
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) throw err;
@@ -33,7 +41,10 @@ app.post('/api/response', (req, res) => {
   const response = JSON.stringify(req.body);
   const date = new Date().toISOString();
   db.run('INSERT INTO responses (id, response, date) VALUES (?, ?, ?)', [id, response, date], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error('Error inserting response:', err);
+      return res.status(500).json({ error: err.message });
+    }
     res.status(201).json({ message: 'Response saved', id });
   });
 });
@@ -41,7 +52,10 @@ app.post('/api/response', (req, res) => {
 // GET: All responses
 app.get('/api/response', (req, res) => {
   db.all('SELECT * FROM responses', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error('Error fetching responses:', err);
+      return res.status(500).json({ error: err.message });
+    }
     const responses = rows.map(r => ({ id: r.id, response: JSON.parse(r.response), date: r.date }));
     res.json(responses);
   });
@@ -53,10 +67,37 @@ app.put('/api/response/:id', (req, res) => {
   const response = JSON.stringify(req.body);
   const date = new Date().toISOString();
   db.run('UPDATE responses SET response = ?, date = ? WHERE id = ?', [response, date, id], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    if (this.changes === 0) return res.status(404).json({ error: 'Response not found' });
+    if (err) {
+      console.error('Error updating response:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    if (this.changes === 0) {
+      console.warn('Response not found for update:', id);
+      return res.status(404).json({ error: 'Response not found' });
+    }
     res.json({ message: 'Response updated' });
   });
+});
+
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`, req.body || '');
+  next();
+});
+
+// Add error handler for JSON parsing
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('Bad JSON:', err);
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+  next(err);
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // (Optional) Migration utility: run migrate-to-sqlite.js if you need to import old JSON data
