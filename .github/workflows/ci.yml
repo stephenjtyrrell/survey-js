@@ -34,5 +34,14 @@ jobs:
         run: npm run test:frontend -- --watch=false --browsers=ChromeHeadless
       - name: Run backend tests
         run: npm run test:backend
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build Docker image
         run: docker build -t surveyjs-fullstack .
+      - name: Tag image
+        run: docker tag surveyjs-fullstack ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:latest
+      - name: Push image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:latest
