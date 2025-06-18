@@ -1,0 +1,47 @@
+/* ...existing code... */
+.loading-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #19b394;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.grid-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.2em;
+  font-weight: 600;
+  padding: 0.5rem 0 0.5rem 0.5rem;
+  user-select: none;
+  border-bottom: 1px solid #e4e4e4;
+  background: #f9fbfc;
+  border-radius: 12px 12px 0 0;
+}
+.arrow {
+  display: inline-block;
+  margin-right: 0.5em;
+  transition: transform 0.2s;
+  font-size: 1.3em;
+}
+.arrow.collapsed {
+  transform: rotate(90deg);
+}
+.header-title {
+  color: #19b394;
+  letter-spacing: 0.5px;
+}

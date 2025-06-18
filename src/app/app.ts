@@ -1,14 +1,16 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { SurveyModule } from 'survey-angular-ui';
 import { Model } from 'survey-core';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { ResponsesComponent } from './responses.component';
 import { surveyJson } from './survey-json';
+import { SurveyApiService } from './survey-api.service';
+import { ToastComponent } from './toast.component';
 
 @Component({
   selector: 'app-root',
-  imports: [SurveyModule, HttpClientModule, CommonModule, ResponsesComponent],
+  imports: [SurveyModule, HttpClientModule, CommonModule, ResponsesComponent, ToastComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -16,12 +18,26 @@ export class App implements OnInit {
   surveyModel!: Model;
   editingId: string | null = null;
   showGrid = true;
+  loading = false;
+  toastMessage = '';
+  toastError = false;
+  toastTimeout: any;
   @ViewChild('responsesComp') responsesComponentRef?: ResponsesComponent;
 
-  constructor(private http: HttpClient) {}
+  constructor(private api: SurveyApiService) {}
 
   ngOnInit() {
     this.createSurvey();
+  }
+
+  showToast(message: string, error = false) {
+    this.toastMessage = message;
+    this.toastError = error;
+    clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => {
+      this.toastMessage = '';
+      this.toastError = false;
+    }, 3000);
   }
 
   createSurvey(data?: any) {
@@ -32,28 +48,33 @@ export class App implements OnInit {
     survey.completeText = this.editingId ? 'Update' : 'Complete';
     this.surveyModel = survey;
     survey.onComplete.add((sender) => {
+      this.loading = true;
       if (this.editingId) {
         const id = this.editingId;
-        this.http.put(`http://localhost:3001/api/response/${id}`, sender.data).subscribe({
+        this.api.updateResponse(id, sender.data).subscribe({
           next: () => {
-            alert('Survey response updated!');
+            this.showToast('Survey response updated!');
             this.refreshResponses();
             this.editingId = null;
             this.createSurvey();
+            this.loading = false;
           },
           error: (err) => {
-            alert('Failed to update response. ' + (err?.error?.error || err.message || ''));
+            this.showToast('Failed to update response. ' + (err?.error?.error || err.message || ''), true);
+            this.loading = false;
           }
         });
       } else {
-        this.http.post('http://localhost:3001/api/response', sender.data).subscribe({
+        this.api.addResponse(sender.data).subscribe({
           next: () => {
-            alert('Survey response submitted!');
+            this.showToast('Survey response submitted!');
             this.refreshResponses();
             this.createSurvey();
+            this.loading = false;
           },
           error: (err) => {
-            alert('Failed to submit response. ' + (err?.error?.error || err.message || ''));
+            this.showToast('Failed to submit response. ' + (err?.error?.error || err.message || ''), true);
+            this.loading = false;
           }
         });
       }

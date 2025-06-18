@@ -1,7 +1,13 @@
-<button (click)="showGrid = !showGrid" class="sv-btn sv-btn--secondary" style="margin-bottom: 1rem;">
-  {{ showGrid ? 'Hide' : 'Show' }} Survey Responses
-</button>
-<div class="sv-container" *ngIf="showGrid">
-  <app-responses #responsesComp (loadResponse)="onLoadResponse($event)" />
+<div class="sv-container">
+  <div class="grid-header" (click)="showGrid = !showGrid">
+    <span class="arrow" [class.collapsed]="!showGrid">&#9654;</span>
+  </div>
+  <div *ngIf="showGrid">
+    <app-responses #responsesComp (loadResponse)="onLoadResponse($event)" />
+  </div>
 </div>
 <survey [model]="surveyModel"></survey>
+<app-toast [message]="toastMessage" [error]="toastError"></app-toast>
+<div *ngIf="loading" class="loading-overlay">
+  <div class="spinner"></div>
+</div>

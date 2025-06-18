@@ -54,3 +54,12 @@ build/
 # Misc
 *.log
 *.tmp
+
+# SQLite DB
+server/survey.db
+
+# Migration and legacy scripts
+server/migrate-to-sqlite.js
+server/index-sqlite.js
+server/responses.json
+server/responses.html

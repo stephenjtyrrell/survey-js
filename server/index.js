@@ -1,15 +1,25 @@
-// Simple Express backend for survey responses
+// SQLite Express backend for survey responses
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const cors = require('cors');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const RESPONSES_FILE = path.join(__dirname, 'responses.json');
+const DB_PATH = path.join(__dirname, 'survey.db');
 
 app.use(cors());
 app.use(express.json());
+
+// Initialize SQLite DB
+const db = new sqlite3.Database(DB_PATH, (err) => {
+  if (err) throw err;
+  db.run(`CREATE TABLE IF NOT EXISTS responses (
+    id TEXT PRIMARY KEY,
+    response TEXT NOT NULL,
+    date TEXT NOT NULL
+  )`);
+});
 
 function generateId() {
   return (
@@ -17,49 +27,42 @@ function generateId() {
   );
 }
 
-// POST endpoint to receive survey responses
+// POST: Add a new response
 app.post('/api/response', (req, res) => {
-  const response = req.body;
-  let responses = [];
-  if (fs.existsSync(RESPONSES_FILE)) {
-    responses = JSON.parse(fs.readFileSync(RESPONSES_FILE));
-  }
   const id = generateId();
-  responses.push({ id, response, date: new Date().toISOString() });
-  fs.writeFileSync(RESPONSES_FILE, JSON.stringify(responses, null, 2));
-  res.status(201).json({ message: 'Response saved', id });
+  const response = JSON.stringify(req.body);
+  const date = new Date().toISOString();
+  db.run('INSERT INTO responses (id, response, date) VALUES (?, ?, ?)', [id, response, date], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(201).json({ message: 'Response saved', id });
+  });
 });
 
-// (Optional) GET endpoint to view all responses
+// GET: All responses
 app.get('/api/response', (req, res) => {
-  if (fs.existsSync(RESPONSES_FILE)) {
-    const responses = JSON.parse(fs.readFileSync(RESPONSES_FILE));
+  db.all('SELECT * FROM responses', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const responses = rows.map(r => ({ id: r.id, response: JSON.parse(r.response), date: r.date }));
     res.json(responses);
-  } else {
-    res.json([]);
-  }
+  });
 });
 
-// PUT endpoint to update a response by id
+// PUT: Update a response by id
 app.put('/api/response/:id', (req, res) => {
   const id = req.params.id;
-  let responses = [];
-  if (fs.existsSync(RESPONSES_FILE)) {
-    responses = JSON.parse(fs.readFileSync(RESPONSES_FILE));
-  }
-  const idx = responses.findIndex(r => r.id === id);
-  if (idx === -1) {
-    return res.status(404).json({ error: 'Response not found' });
-  }
-  responses[idx].response = req.body;
-  responses[idx].date = new Date().toISOString();
-  fs.writeFileSync(RESPONSES_FILE, JSON.stringify(responses, null, 2));
-  res.json({ message: 'Response updated' });
+  const response = JSON.stringify(req.body);
+  const date = new Date().toISOString();
+  db.run('UPDATE responses SET response = ?, date = ? WHERE id = ?', [response, date, id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Response not found' });
+    res.json({ message: 'Response updated' });
+  });
 });
 
-// Serve the responses.html page
-app.use('/responses', express.static(path.join(__dirname, 'responses.html')));
+// (Optional) Migration utility: run migrate-to-sqlite.js if you need to import old JSON data
 
 app.listen(PORT, () => {
-  console.log(`Survey backend running on port ${PORT}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Survey backend (SQLite) running on port ${PORT}`);
+  }
 });
