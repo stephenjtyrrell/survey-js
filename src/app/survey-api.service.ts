@@ -20,4 +20,8 @@ export class SurveyApiService {
   updateResponse(id: string, data: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}`, data);
   }
+
+  deleteResponse(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`);
+  }
 }

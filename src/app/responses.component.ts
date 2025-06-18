@@ -24,7 +24,7 @@ import { CommonModule, JsonPipe } from '@angular/common';
           <td>{{ i + 1 }}</td>
           <td>{{ item.date }}</td>
           <td><pre>{{ item.response | json }}</pre></td>
-          <td><button (click)="startEdit(i, item)">Edit</button></td>
+          <td><button (click)="startEdit(i, item)">Edit</button> <button (click)="deleteResponse(item.id)">Delete</button></td>
         </tr>
       </tbody>
     </table>
@@ -117,6 +117,18 @@ export class ResponsesComponent implements OnInit {
       return;
     }
     this.loadResponse.emit({ response: item.response, id: item.id });
+  }
+
+  deleteResponse(id: string) {
+    if (!id) {
+      alert('This response cannot be deleted because it has no ID.');
+      return;
+    }
+    if (!confirm('Are you sure you want to delete this response?')) return;
+    this.api.deleteResponse(id).subscribe({
+      next: () => this.refresh(),
+      error: err => alert('Failed to delete response: ' + (err?.error?.error || err.message || err))
+    });
   }
 
   refresh() {

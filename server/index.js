@@ -79,6 +79,22 @@ app.put('/api/response/:id', (req, res) => {
   });
 });
 
+// DELETE: Remove a response by id
+app.delete('/api/response/:id', (req, res) => {
+  const id = req.params.id;
+  db.run('DELETE FROM responses WHERE id = ?', [id], function(err) {
+    if (err) {
+      console.error('Error deleting response:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    if (this.changes === 0) {
+      console.warn('Response not found for delete:', id);
+      return res.status(404).json({ error: 'Response not found' });
+    }
+    res.json({ message: 'Response deleted' });
+  });
+});
+
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`, req.body || '');
