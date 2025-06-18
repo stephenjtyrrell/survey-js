@@ -17,6 +17,7 @@
   "devDependencies": {
     "jest": "^29.0.0",
     "supertest": "^6.0.0",
+    "yargs": "^17.0.0",
     "concurrently": "^9.1.2"
   }
 }
