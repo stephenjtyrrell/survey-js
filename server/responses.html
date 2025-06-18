@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survey Responses</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    h1 { color: #2c3e50; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    tr:nth-child(even) { background: #fafafa; }
+  </style>
+</head>
+<body>
+  <h1>Survey Responses</h1>
+  <table id="responsesTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Response</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    fetch('/api/response')
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.querySelector('#responsesTable tbody');
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="3">No responses yet.</td></tr>';
+          return;
+        }
+        data.forEach((item, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${idx + 1}</td><td>${item.date}</td><td><pre>${JSON.stringify(item.response, null, 2)}</pre></td>`;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(() => {
+        document.querySelector('#responsesTable tbody').innerHTML = '<tr><td colspan="3">Failed to load responses.</td></tr>';
+      });
+  </script>
+</body>
+</html>

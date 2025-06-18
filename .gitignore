@@ -40,3 +40,17 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# Server runtime files
+server/responses.json
+
+# Build output
+build/
+
+# Misc
+*.log
+*.tmp
