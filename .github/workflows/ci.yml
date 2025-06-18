@@ -46,8 +46,11 @@ jobs:
       - name: Build Docker image
         run: docker build -t surveyjs-fullstack .
 
-      - name: Tag Docker image
-        run: docker tag surveyjs-fullstack ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:latest
-
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:latest
+      - name: Tag Docker image (latest and SHA)
+        run: |
+          docker tag surveyjs-fullstack ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:latest
+          docker tag surveyjs-fullstack ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:${{ github.sha }}
+      - name: Push Docker image (latest and SHA)
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/surveyjs:${{ github.sha }}
