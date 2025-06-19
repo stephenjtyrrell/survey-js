@@ -1,33 +1,32 @@
 // SQLite Express backend for survey responses
 const express = require('express');
-const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const DB_PATH = path.join(__dirname, 'survey.db');
+const DB_PATH = process.env.DB_PATH || './survey.db';
 
-app.use(cors());
-app.use(express.json());
+// Middleware
+app.use(bodyParser.json());
 
-// Serve static files from the public directory
+// Serve static files from Angular build
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Fallback: serve index.html for any non-API route (for Angular routing)
-app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// Initialize SQLite DB
+// SQLite setup
 const db = new sqlite3.Database(DB_PATH, (err) => {
-  if (err) throw err;
-  db.run(`CREATE TABLE IF NOT EXISTS responses (
-    id TEXT PRIMARY KEY,
-    response TEXT NOT NULL,
-    date TEXT NOT NULL
-  )`);
+  if (err) {
+    console.error('Could not connect to database', err);
+  } else {
+    console.log('Connected to SQLite database');
+  }
 });
+db.run(`CREATE TABLE IF NOT EXISTS responses (
+  id TEXT PRIMARY KEY,
+  response TEXT NOT NULL,
+  date TEXT NOT NULL
+)`);
 
 function generateId() {
   return (

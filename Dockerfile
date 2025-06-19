@@ -1,40 +1,27 @@
 # Stage 1: Build Angular frontend
-FROM node:20 AS build-frontend
+FROM node:20-alpine AS build-frontend
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package*.json ./
+COPY src ./src
+COPY angular.json ./
+COPY tsconfig*.json ./
 RUN npm ci
-COPY ./src ./src
-COPY angular.json tsconfig*.json ./
-RUN npm run build -- --output-path=dist
+RUN npm run build -- --configuration=production
+RUN ls -l /app/dist && ls -l /app/dist/surveyjs || true && ls -l /app/dist/browser || true
 
-# Stage 2: Build server
-FROM node:20 AS build-server
+# Stage 2: Build backend
+FROM node:20-alpine AS build-backend
 WORKDIR /app
-COPY server/package.json server/package-lock.json ./server/
-RUN cd server && npm ci --omit=dev
+COPY server/package*.json ./server/
+RUN cd server && npm ci --only=production
+
+# Stage 3: Final image
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=build-frontend /app/dist/surveyjs/browser ./public
+COPY --from=build-backend /app/server/node_modules ./server/node_modules
 COPY server ./server
-
-# Stage 3: Production image
-FROM node:20-slim
-LABEL maintainer="Stephen Tyrrell stetyrrell132@gmail.com"
-LABEL description="Optimized SurveyJS full stack app"
-WORKDIR /app
-
-# Copy server code and only production dependencies
-COPY --from=build-server /app/server ./server
-
-# Copy built frontend (from dist/browser to public)
-COPY --from=build-frontend /app/dist/browser ./public
-
-# Add a non-root user
-RUN useradd -m appuser && chown -R appuser /app
-USER appuser
-
-# Expose port
+ENV NODE_ENV=production
+ENV PORT=3001
 EXPOSE 3001
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -f http://localhost:3001/api/response || exit 1
-
-# Start the server
 CMD ["node", "server/index.js"]

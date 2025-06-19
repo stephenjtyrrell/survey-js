@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: surveyjs-app
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    # If you want to deploy from Docker Hub instead of building from source, use the following:
+    # image: yourdockerhubuser/surveyjs:latest
+    # comment out dockerfilePath above if using image
+    envVars:
+      - key: PORT
+        value: 3001
+    # If your app needs other environment variables, add them here
+    # - key: NODE_ENV
+    #   value: production
+    # - key: DATABASE_URL
+    #   value: <your-db-url>
