@@ -5,7 +5,7 @@ import { SurveyResponse } from './survey-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class SurveyApiService {
-  private readonly apiUrl = 'http://localhost:10000/api/response';
+  private readonly apiUrl = '/api/response';
 
   constructor(private http: HttpClient) {}
 
