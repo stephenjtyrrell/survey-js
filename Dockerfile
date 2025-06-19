@@ -22,6 +22,6 @@ COPY --from=build-frontend /app/dist/surveyjs/browser ./public
 COPY --from=build-backend /app/server/node_modules ./server/node_modules
 COPY server ./server
 ENV NODE_ENV=production
-ENV PORT=3001
-EXPOSE 3001
+ENV PORT=10000
+EXPOSE 10000
 CMD ["node", "server/index.js"]
