@@ -1,20 +1,23 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { SurveyModule } from 'survey-angular-ui';
 import { Model } from 'survey-core';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { ResponsesComponent } from './responses.component';
 import { surveyJson } from './survey-json';
 import { SurveyApiService } from './survey-api.service';
 import { ToastComponent } from './toast.component';
+import { RouterModule, Router } from '@angular/router';
+import { SurveyConfigService } from './survey-config.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [SurveyModule, HttpClientModule, CommonModule, ResponsesComponent, ToastComponent],
+  imports: [SurveyModule, HttpClientModule, CommonModule, ResponsesComponent, ToastComponent, RouterModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   surveyModel!: Model;
   editingId: string | null = null;
   showGrid = true;
@@ -22,12 +25,18 @@ export class App implements OnInit {
   toastMessage = '';
   toastError = false;
   toastTimeout: any;
+  configSub?: Subscription;
   @ViewChild('responsesComp') responsesComponentRef?: ResponsesComponent;
 
-  constructor(private api: SurveyApiService) {}
+  constructor(private api: SurveyApiService, private http: HttpClient, private configService: SurveyConfigService, public router: Router) {}
 
   ngOnInit() {
-    this.createSurvey();
+    this.loadSurveyConfig();
+    this.configSub = this.configService.configUpdated$.subscribe(() => this.loadSurveyConfig());
+  }
+
+  ngOnDestroy() {
+    this.configSub?.unsubscribe();
   }
 
   showToast(message: string, error = false) {
@@ -40,8 +49,17 @@ export class App implements OnInit {
     }, 3000);
   }
 
-  createSurvey(data?: any) {
-    const survey = new Model(surveyJson);
+  loadSurveyConfig() {
+    // Add a cache-busting query param to force a hard refresh of the JSON
+    const url = `/api/survey-config?cb=${Date.now()}`;
+    this.http.get(url).subscribe({
+      next: (config) => this.createSurvey(undefined, config),
+      error: () => this.createSurvey()
+    });
+  }
+
+  createSurvey(data?: any, config?: any) {
+    const survey = new Model(config || surveyJson);
     if (data) {
       survey.data = data;
     }
@@ -56,7 +74,7 @@ export class App implements OnInit {
             this.showToast('Survey response updated!');
             this.refreshResponses();
             this.editingId = null;
-            this.createSurvey();
+            this.ngOnInit();
             this.loading = false;
           },
           error: (err) => {
@@ -69,7 +87,7 @@ export class App implements OnInit {
           next: () => {
             this.showToast('Survey response submitted!');
             this.refreshResponses();
-            this.createSurvey();
+            this.ngOnInit();
             this.loading = false;
           },
           error: (err) => {

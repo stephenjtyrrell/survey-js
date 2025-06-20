@@ -28,6 +28,23 @@ db.run(`CREATE TABLE IF NOT EXISTS responses (
   date TEXT NOT NULL
 )`);
 
+// Create survey_config table if it doesn't exist
+const initSurveyConfig = () => {
+  db.run(`CREATE TABLE IF NOT EXISTS survey_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    json TEXT NOT NULL
+  )`, () => {
+    // Insert default config if not present
+    db.get('SELECT * FROM survey_config WHERE id = 1', (err, row) => {
+      if (!row) {
+        const defaultJson = JSON.stringify({}); // You can paste your survey-json.ts content here
+        db.run('INSERT INTO survey_config (id, json) VALUES (1, ?)', [defaultJson]);
+      }
+    });
+  });
+};
+initSurveyConfig();
+
 function generateId() {
   return (
     Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
@@ -94,6 +111,31 @@ app.delete('/api/response/:id', (req, res) => {
   });
 });
 
+// API: Get survey config
+app.get('/api/survey-config', (req, res) => {
+  db.get('SELECT json FROM survey_config WHERE id = 1', (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(row ? JSON.parse(row.json) : {});
+  });
+});
+
+// API: Update survey config
+app.put('/api/survey-config', (req, res) => {
+  const json = JSON.stringify(req.body);
+  db.run('UPDATE survey_config SET json = ? WHERE id = 1', [json], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Survey config updated' });
+  });
+});
+
+// API: List all survey config records (for future multi-record support)
+app.get('/api/survey-configs', (req, res) => {
+  db.all('SELECT id, json FROM survey_config', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(row => ({ id: row.id, json: JSON.parse(row.json) })));
+  });
+});
+
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`, req.body || '');
@@ -113,6 +155,15 @@ app.use((err, req, res, next) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
+});
+
+// Serve index.html for all non-API routes (Angular client-side routing)
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
 });
 
 // (Optional) Migration utility: run migrate-to-sqlite.js if you need to import old JSON data

@@ -1,13 +1,26 @@
-<div class="sv-container">
-  <div class="grid-header" (click)="showGrid = !showGrid">
-    <span class="arrow" [class.collapsed]="!showGrid">&#9654;</span>
+<nav class="main-nav">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+  <a routerLink="/edit-survey" routerLinkActive="active">Edit Survey</a>
+  <a routerLink="/surveyjs-creator" routerLinkActive="active">SurveyJS Form Creator</a>
+  <a routerLink="/survey-configs" routerLinkActive="active">List Survey Configs</a>
+</nav>
+<router-outlet></router-outlet>
+
+<!-- Only show main content on the home route -->
+<ng-container *ngIf="router.url === '/'">
+  <div class="main-content">
+    <div class="sv-container">
+      <div class="grid-header" (click)="showGrid = !showGrid">
+        <span class="arrow" [class.collapsed]="!showGrid">&#9654;</span>
+      </div>
+      <div *ngIf="showGrid">
+        <app-responses #responsesComp (loadResponse)="onLoadResponse($event)" />
+      </div>
+    </div>
+    <survey [model]="surveyModel"></survey>
+    <app-toast [message]="toastMessage" [error]="toastError"></app-toast>
+    <div *ngIf="loading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
   </div>
-  <div *ngIf="showGrid">
-    <app-responses #responsesComp (loadResponse)="onLoadResponse($event)" />
-  </div>
-</div>
-<survey [model]="surveyModel"></survey>
-<app-toast [message]="toastMessage" [error]="toastError"></app-toast>
-<div *ngIf="loading" class="loading-overlay">
-  <div class="spinner"></div>
-</div>
+</ng-container>
